@@ -1,4 +1,4 @@
-package br.com.zago.linguagensapi;
+package br.com.zago.linguagensapi.model;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -11,15 +11,16 @@ public class Linguagem {
     private String title;
     private String image;
     private int ranking;
+    private long votos;
     
     public Linguagem(){
 
     }
     
-    public Linguagem(String title, String image, int ranking) {
-        this.title = title;
+    public Linguagem(String title, String image) {
+        this.title = title.toUpperCase();
         this.image = image;
-        this.ranking = ranking;
+        this.ranking = 0;
     }
 
     public String getId() {
@@ -54,6 +55,12 @@ public class Linguagem {
         this.ranking = ranking;
     }
     
-    
+    public Long getVotos() {
+        return votos;
+    }
+
+    public void receberVoto() {
+        this.votos += 1;
+    }    
     
 }

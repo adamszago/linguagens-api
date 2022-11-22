@@ -1,8 +1,6 @@
-package br.com.zago.linguagensapi;
+package br.com.zago.linguagensapi.controller;
 
 import java.util.List;
-import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,27 +12,36 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import br.com.zago.linguagensapi.model.ApiMessage;
+import br.com.zago.linguagensapi.model.Linguagem;
+import br.com.zago.linguagensapi.service.LinguagemService;
+
 @RestController
 public class LinguagemController {
     
     @Autowired
-    private LinguagemRepository repositorio;
+    private LinguagemService service;
     
-    /*private List<Linguagem> linguagens = List.of(
-        new Linguagem("Java", "https://raw.githubusercontent.com/abrahamcalf/programming-languages-logos/master/src/java/java_256x256.png", 1),
-        new Linguagem("PHP", "https://camo.githubusercontent.com/0bfae1cd94ba02e04e473181296d77a62fcba7df0b8ee281a660c75825868676/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f6e706d2f4070726f6772616d6d696e672d6c616e6775616765732d6c6f676f732f70687040302e302e302f7068705f323536783235362e706e67", 2)
-    );*/
-
     /**
      * @return
      */
     @GetMapping("/linguagens")
     public ResponseEntity<?> obterLinguagens() {
-        List<Linguagem> listRetorno = repositorio.findAll();
+        List<Linguagem> listRetorno = service.obterLinguagens();
         if (listRetorno.equals(null)) {
             return new ResponseEntity<ApiMessage>(new ApiMessage("Não há linguagens cadastradas"), HttpStatus.NOT_FOUND);
         } else {
             return new ResponseEntity<List<Linguagem>>(listRetorno, HttpStatus.OK);
+        }
+    }
+
+    @GetMapping("/linguagens/{title}")
+    public ResponseEntity<?> votar(@PathVariable("title") String title) {
+        try {
+            Linguagem lingRetorno = service.votar(title);
+            return new ResponseEntity<Linguagem>(lingRetorno, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<ApiMessage>(new ApiMessage(e.getMessage()), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -44,7 +51,7 @@ public class LinguagemController {
      */
     @PostMapping("/linguagens")
     public ResponseEntity<?> cadastrarLinguagem(@RequestBody Linguagem linguagem) {
-        Linguagem language = repositorio.save(linguagem);
+        Linguagem language = service.cadastrarLinguagem(linguagem);
         return new ResponseEntity<Linguagem>(language, HttpStatus.CREATED);
     }
 
@@ -56,13 +63,17 @@ public class LinguagemController {
      */
     @PutMapping("/linguagens/{id}")
     public ResponseEntity<?> updateLinguagem(@PathVariable("id") String id, @RequestBody Linguagem linguagem) {
-        Optional<Linguagem> ling = repositorio.findById(id);
-        if (ling.isPresent()) {
-            Linguagem lingToSave = ling.get();
+        Linguagem ling = service.findById(id);
+        if (ling != null) {
+            Linguagem lingToSave = ling;
             lingToSave.setImage(linguagem.getImage() != null? linguagem.getImage() : lingToSave.getImage());
             lingToSave.setRanking(linguagem.getRanking() > 0? linguagem.getRanking() : lingToSave.getRanking());
-            lingToSave.setTitle(linguagem.getTitle() != null? linguagem.getTitle() : lingToSave.getTitle());
-            repositorio.save(lingToSave);
+            lingToSave.setTitle(linguagem.getTitle() != null? linguagem.getTitle().toUpperCase() : lingToSave.getTitle().toUpperCase());
+            try {
+                service.atualizarLinguagem(lingToSave);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             return new ResponseEntity<Linguagem>(lingToSave, HttpStatus.OK);
         } else {
             return new ResponseEntity<ApiMessage>(new ApiMessage("Não há nenhuma Linguagem com esse ID"), HttpStatus.NOT_FOUND);
@@ -76,8 +87,18 @@ public class LinguagemController {
     @DeleteMapping("linguagens/{id}")
     public ResponseEntity<?> deleteLanguagemById(@PathVariable("id") String id) {
         try {
-            repositorio.deleteById(id);
+            service.deletarLinguagem(id);
             return new ResponseEntity<ApiMessage>(new ApiMessage("Linguagem apagada com sucesso"), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @GetMapping("linguagens/{id}")
+    public ResponseEntity<?> findLanguagemById(@PathVariable("id") String id) {
+        try {
+            Linguagem lingRetorno = service.findById(id);
+            return new ResponseEntity<Linguagem>(lingRetorno, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
         }

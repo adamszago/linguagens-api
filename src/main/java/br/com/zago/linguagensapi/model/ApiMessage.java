@@ -1,4 +1,4 @@
-package br.com.zago.linguagensapi;
+package br.com.zago.linguagensapi.model;
 
 public class ApiMessage {
     
